@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<!--
+  Host this folder on HTTPS (Netlify, GitHub Pages, Vercel), then embed in Google Sites:
+
+  <iframe
+    src="https://YOUR-HOST/index.html"
+    width="100%"
+    height="1100"
+    style="border:0;max-width:100%;"
+    allow="microphone; autoplay"
+    loading="lazy">
+  </iframe>
+
+  If the site embed strips microphone permission, use the in-form "open in new tab" link.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Climate Survey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="i18n.js"></script>
+  <style>
+    :root {
+      --background: 42 47% 97%;
+      --foreground: 150 20% 12%;
+      --card: 0 0% 100%;
+      --muted: 40 24% 93%;
+      --muted-foreground: 150 8% 38%;
+      --border: 40 16% 86%;
+      --primary: 148 48% 26%;
+      --primary-foreground: 42 60% 97%;
+      --ring: 148 48% 26%;
+      --destructive: 0 72% 51%;
+      --destructive-foreground: 0 0% 100%;
+      --accent: 28 80% 52%;
+      --radius: 0.75rem;
+      --shadow: 0 1px 2px hsl(150 20% 12% / 0.06), 0 8px 24px hsl(150 16% 12% / 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      font-family: "Noto Sans Devanagari", "Noto Sans", system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    button, input, textarea, select { font: inherit; }
+
+    .app {
+      width: min(640px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      margin: 0;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.8rem;
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      padding: 3px;
+      background: hsl(var(--muted));
+      border: 1px solid hsl(var(--border));
+      border-radius: 999px;
+    }
+
+    .lang-switch button {
+      border: 0;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .lang-switch button[aria-pressed="true"] {
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      box-shadow: var(--shadow);
+    }
+
+    .identity {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .identity .field { margin-bottom: 0; }
+
+    @media (max-width: 560px) {
+      .identity { grid-template-columns: 1fr; }
+    }
+
+    .question {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid hsl(var(--border));
+    }
+
+    .question h2 { font-size: 1.05rem; }
+
+    .card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: calc(var(--radius) + 4px);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+    }
+
+    .lead {
+      margin: 0 0 18px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .field { display: grid; gap: 8px; margin-bottom: 16px; }
+
+    .field:last-child { margin-bottom: 0; }
+
+    label {
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    .hint {
+      color: hsl(var(--muted-foreground));
+      font-size: 0.8rem;
+      font-weight: 400;
+    }
+
+    input[type="text"],
+    input[type="tel"] {
+      width: 100%;
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      outline: none;
+    }
+
+    input:focus, button:focus-visible {
+      box-shadow: 0 0 0 3px hsl(var(--ring) / 0.22);
+      border-color: hsl(var(--primary));
+    }
+
+    .composer {
+      position: relative;
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--background));
+      border-radius: var(--radius);
+    }
+
+    .composer:focus-within {
+      box-shadow: 0 0 0 3px hsl(var(--ring) / 0.22);
+      border-color: hsl(var(--primary));
+    }
+
+    .composer.live {
+      border-color: hsl(var(--destructive));
+    }
+
+    .composer textarea {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      border: 0;
+      background: transparent;
+      color: hsl(var(--foreground));
+      padding: 12px 56px 40px 14px;
+      outline: none;
+    }
+
+    .composer-tools {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .timer {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: hsl(var(--destructive));
+    }
+
+    .interim-line {
+      min-height: 1.2em;
+      margin-top: 6px;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.85rem;
+    }
+
+    .interim-line.live { color: hsl(var(--primary)); font-weight: 600; }
+
+    .mic-btn {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 999px;
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+
+    .mic-btn.live {
+      background: hsl(var(--destructive));
+      color: #fff;
+    }
+
+    .clips {
+      display: grid;
+      gap: 8px;
+    }
+
+    .clip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: hsl(var(--muted) / 0.7);
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+    }
+
+    .clip audio { flex: 1; min-width: 0; height: 36px; }
+
+    .clip-remove {
+      border: 0;
+      background: transparent;
+      color: hsl(var(--destructive));
+      cursor: pointer;
+      font-weight: 700;
+      padding: 4px 8px;
+    }
+
+    .choice-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .choice {
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--background));
+      border-radius: 999px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .choice[aria-pressed="true"] {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-color: hsl(var(--primary));
+    }
+
+    .btn {
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-primary {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-color: hsl(var(--primary));
+    }
+
+    .btn-ghost { background: transparent; }
+
+    .btn-danger {
+      color: hsl(var(--destructive));
+      border-color: hsl(var(--destructive) / 0.3);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.45); }
+      70% { box-shadow: 0 0 0 8px hsl(var(--destructive) / 0); }
+      100% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0); }
+    }
+
+    .mic-btn.live { animation: pulse 1.2s ease infinite; }
+
+    .nav {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .nav .btn { min-height: 44px; min-width: 140px; justify-content: center; }
+
+    .alert {
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      background: hsl(28 90% 95%);
+      border: 1px solid hsl(28 70% 80%);
+      color: hsl(20 50% 24%);
+      font-size: 0.92rem;
+    }
+
+    .alert a { color: inherit; font-weight: 700; }
+
+    .error {
+      background: hsl(0 80% 96%);
+      border-color: hsl(0 70% 84%);
+      color: hsl(0 50% 28%);
+    }
+
+    .success {
+      text-align: center;
+      padding: 28px 12px;
+    }
+
+    .success h2 { font-size: 1.6rem; }
+
+    .hidden { display: none !important; }
+
+    .view-switch {
+      display: flex;
+      gap: 8px;
+    }
+
+    .response-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .response-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .response-card {
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 0;
+      background: hsl(var(--background));
+      overflow: hidden;
+    }
+
+    .response-summary {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .response-summary:hover { background: hsl(var(--muted) / 0.65); }
+
+    .response-summary-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .response-summary-text strong {
+      display: block;
+      font-size: 0.95rem;
+    }
+
+    .response-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+
+    .response-chevron {
+      flex-shrink: 0;
+      color: hsl(var(--muted-foreground));
+      transition: transform 160ms ease;
+    }
+
+    .response-card.open .response-chevron { transform: rotate(180deg); }
+
+    .response-body {
+      display: none;
+      padding: 0 12px 12px;
+    }
+
+    .response-card.open .response-body { display: block; }
+
+    .response-q {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid hsl(var(--border));
+    }
+
+    .response-q h3 {
+      margin: 0 0 6px;
+      font-size: 0.92rem;
+    }
+
+    .response-q p {
+      margin: 0 0 8px;
+      white-space: pre-wrap;
+    }
+
+    .response-card audio {
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    .sql-box {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: var(--radius);
+      background: hsl(150 20% 12%);
+      color: #f4f1ea;
+      font-size: 0.75rem;
+      overflow-x: auto;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 14c2-6 6-9 8-9s6 3 8 9" />
+            <path d="M8 14c.8 3 2.5 5 4 5s3.2-2 4-5" />
+            <path d="M12 5v3" />
+          </svg>
+        </div>
+        <div>
+          <h1 id="title"></h1>
+          <p id="subtitle"></p>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <div class="view-switch" id="view-switch"></div>
+        <div class="lang-switch" id="lang-switch" role="group" aria-label="Language"></div>
+      </div>
+    </header>
+
+    <main class="card" id="screen"></main>
+    <div class="nav" id="nav"></div>
+  </div>
+
+  <script>
+    const I18N = window.SURVEY_I18N || { defaultLanguage: "en", languages: [], strings: {} };
+    const DEFAULT_LANG = I18N.defaultLanguage || "en";
+
+    const AUDIO_FIELDS = ["q1", "q2", "q3"];
+
+    const state = {
+      lang: DEFAULT_LANG,
+      farmer_name: "",
+      farmer_phone: "",
+      q1_text: "",
+      q1_transcript: "",
+      q2_text: "",
+      q2_transcript: "",
+      q3_aware: "",
+      q3_text: "",
+      q3_transcript: "",
+      audio: { q1: [], q2: [], q3: [] },
+      recordingId: null,
+      interim: {},
+      dictationBase: {},
+      dictationFinal: {},
+      error: "",
+      submitting: false,
+      done: false,
+      view: "form",
+      responses: [],
+      responsesLoading: false,
+      responsesError: "",
+      expandedIds: {},
+    };
+
+    let supabaseClient = null;
+
+    let mediaRecorder = null;
+    let mediaStream = null;
+    let recordStream = null;
+    let chunks = [];
+    let recTimer = null;
+    let recStartedAt = 0;
+    let recognition = null;
+
+    const currentLang = () =>
+      I18N.languages.find((lang) => lang.code === state.lang) ||
+      I18N.languages.find((lang) => lang.code === DEFAULT_LANG) ||
+      I18N.languages[0] ||
+      { code: "en", speech: "en-IN", dir: "ltr" };
+
+    const t = (key) => {
+      const pack = I18N.strings[state.lang] || {};
+      const fallback = I18N.strings[DEFAULT_LANG] || I18N.strings.en || {};
+      return pack[key] ?? fallback[key] ?? key;
+    };
+    const speechLang = () => currentLang().speech || "en-IN";
+    const $ = (id) => document.getElementById(id);
+
+    async function setLanguage(code) {
+      if (state.recordingId) await stopRecording();
+      state.lang = code;
+      render();
+    }
+
+    function getClient() {
+      if (!isConfigured()) return null;
+      if (!supabaseClient) {
+        supabaseClient = window.supabase.createClient(
+          window.SURVEY_CONFIG.supabaseUrl,
+          window.SURVEY_CONFIG.supabaseAnonKey
+        );
+      }
+      return supabaseClient;
+    }
+
+    function parseAudioRefs(value) {
+      if (!value) return [];
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean).map(String);
+        if (parsed) return [String(parsed)];
+      } catch {}
+      return [String(value)];
+    }
+
+    function isHttpUrl(value) {
+      return /^https?:\/\//i.test(value);
+    }
+
+    async function toPlayableUrl(client, ref) {
+      if (!ref) return null;
+      if (isHttpUrl(ref)) return ref;
+      const signed = await client.storage
+        .from("climate-survey-audio")
+        .createSignedUrl(ref, 60 * 60 * 24 * 7);
+      if (!signed.error && signed.data?.signedUrl) return signed.data.signedUrl;
+      const pub = client.storage.from("climate-survey-audio").getPublicUrl(ref);
+      return pub.data?.publicUrl || null;
+    }
+
+    async function resolveRowAudio(client, row) {
+      const next = { ...row };
+      for (const field of AUDIO_FIELDS) {
+        const refs = parseAudioRefs(row[`${field}_audio_path`]);
+        const urls = [];
+        for (const ref of refs) {
+          const url = await toPlayableUrl(client, ref);
+          if (url) urls.push(url);
+        }
+        next[`${field}_audio_urls`] = urls;
+      }
+      return next;
+    }
+
+    const READ_POLICY_SQL = `grant select on table public.climate_survey_responses to anon, authenticated;
+
+drop policy if exists "anon_can_read_survey" on public.climate_survey_responses;
+create policy "anon_can_read_survey"
+  on public.climate_survey_responses
+  for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "anon_can_read_survey_audio" on storage.objects;
+create policy "anon_can_read_survey_audio"
+  on storage.objects
+  for select
+  to anon, authenticated
+  using (bucket_id = 'climate-survey-audio');`;
+
+    async function loadResponses() {
+      const client = getClient();
+      if (!client) {
+        state.responsesError = t("setup");
+        state.responsesLoading = false;
+        render();
+        return;
+      }
+      state.responsesLoading = true;
+      state.responsesError = "";
+      render();
+      try {
+        const { data, error } = await client
+          .from("climate_survey_responses")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        const rows = data || [];
+        state.responses = rows.map((row) => ({
+          ...row,
+          q1_audio_urls: [],
+          q2_audio_urls: [],
+          q3_audio_urls: [],
+        }));
+        state.responsesLoading = false;
+        render();
+        const withAudio = [];
+        for (const row of rows) {
+          try {
+            withAudio.push(await resolveRowAudio(client, row));
+          } catch (audioErr) {
+            console.error(audioErr);
+            withAudio.push({ ...row, q1_audio_urls: [], q2_audio_urls: [], q3_audio_urls: [] });
+          }
+        }
+        state.responses = withAudio;
+      } catch (err) {
+        console.error(err);
+        state.responsesError = `${t("loadError")} ${err.message || ""}`.trim();
+      } finally {
+        state.responsesLoading = false;
+        render();
+      }
+    }
+
+    function renderViewSwitch() {
+      const group = $("view-switch");
+      group.innerHTML = "";
+      [
+        ["form", t("surveyTab")],
+        ["responses", t("responsesTab")],
+      ].forEach(([id, label]) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = state.view === id ? "btn btn-primary" : "btn";
+        btn.textContent = label;
+        btn.addEventListener("click", async () => {
+          if (state.view === id) return;
+          if (state.recordingId) await stopRecording();
+          state.view = id;
+          state.error = "";
+          render();
+          if (id === "responses") loadResponses();
+        });
+        group.append(btn);
+      });
+    }
+
+    function renderLangSwitch() {
+      const group = $("lang-switch");
+      group.innerHTML = "";
+      I18N.languages.forEach((lang) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.setAttribute("aria-pressed", String(state.lang === lang.code));
+        btn.textContent = lang.label;
+        btn.addEventListener("click", () => setLanguage(lang.code));
+        group.append(btn);
+      });
+    }
+
+    function isConfigured() {
+      const cfg = window.SURVEY_CONFIG || {};
+      return Boolean(
+        cfg.supabaseUrl &&
+        cfg.supabaseAnonKey &&
+        !cfg.supabaseUrl.includes("YOUR_SUPABASE") &&
+        !cfg.supabaseAnonKey.includes("YOUR_SUPABASE")
+      );
+    }
+
+    function inIframe() {
+      try { return window.self !== window.top; } catch { return true; }
+    }
+
+    function speechSupported() {
+      return "SpeechRecognition" in window || "webkitSpeechRecognition" in window;
+    }
+
+    function pickMime() {
+      const types = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/ogg;codecs=opus",
+      ];
+      return types.find((type) => window.MediaRecorder && MediaRecorder.isTypeSupported(type)) || "";
+    }
+
+    function formatTime(ms) {
+      const sec = Math.floor(ms / 1000);
+      return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+    }
+
+    function stopRecognition() {
+      if (!recognition) return;
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+      try { recognition.abort(); } catch {
+        try { recognition.stop(); } catch {}
+      }
+      recognition = null;
+    }
+
+    function fieldTextKey(fieldId) {
+      return `${fieldId}_text`;
+    }
+
+    function liveLine(fieldId) {
+      return document.querySelector(`[data-live="${fieldId}"]`);
+    }
+
+    function showDictation(fieldId) {
+      const line = liveLine(fieldId);
+      const active = state.recordingId === fieldId;
+      const interim = state.interim[fieldId] || "";
+      if (line) {
+        line.classList.toggle("live", active);
+        line.textContent = interim.trim() || (active ? t("listening") : "");
+      }
+      if (!active && !state.dictationFinal[fieldId]) return;
+      const base = state.dictationBase[fieldId] || "";
+      const finals = state.dictationFinal[fieldId] || "";
+      const committed = [base.trim(), finals.trim()].filter(Boolean).join(" ");
+      state[fieldTextKey(fieldId)] = committed;
+      state[`${fieldId}_transcript`] = finals.trim();
+      const input = document.getElementById(fieldId);
+      if (input) input.value = [committed, interim.trim()].filter(Boolean).join(" ");
+    }
+
+    function micIcon() {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`;
+    }
+
+    function stopIcon() {
+      return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
+    }
+
+    function startRecognition(fieldId) {
+      stopRecognition();
+      if (!speechSupported()) {
+        const line = liveLine(fieldId);
+        if (line) line.textContent = t("noSpeech");
+        return;
+      }
+      const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new Ctor();
+      recognition.lang = speechLang();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+      recognition.onresult = (event) => {
+        let interim = "";
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+          const piece = event.results[i][0].transcript.trim();
+          if (!piece) continue;
+          if (event.results[i].isFinal) {
+            state.dictationFinal[fieldId] = [state.dictationFinal[fieldId], piece]
+              .filter(Boolean)
+              .join(" ");
+          } else {
+            interim += (interim ? " " : "") + piece;
+          }
+        }
+        state.interim[fieldId] = interim;
+        showDictation(fieldId);
+      };
+      recognition.onerror = (event) => {
+        if (event.error === "no-speech" || event.error === "aborted") return;
+        const line = liveLine(fieldId);
+        if (event.error === "not-allowed") {
+          if (line) line.textContent = t("micBlocked");
+          return;
+        }
+        if (event.error === "network") {
+          if (line) line.textContent = t("noSpeech");
+        }
+      };
+      recognition.onend = () => {
+        if (state.recordingId === fieldId && recognition) {
+          try { recognition.start(); } catch {}
+        }
+      };
+      recognition.start();
+    }
+
+    function clipsFor(fieldId) {
+      if (!Array.isArray(state.audio[fieldId])) state.audio[fieldId] = [];
+      return state.audio[fieldId];
+    }
+
+    function updateComposerChrome(fieldId) {
+      const composer = document.querySelector(`[data-recorder="${fieldId}"]`);
+      if (!composer) return;
+      const active = state.recordingId === fieldId;
+      composer.classList.toggle("live", active);
+      const mic = composer.querySelector(".mic-btn");
+      if (mic) {
+        mic.classList.toggle("live", active);
+        mic.setAttribute("aria-pressed", String(active));
+        mic.setAttribute("aria-label", active ? t("stop") : t("record"));
+        mic.title = active ? t("stop") : t("record");
+        mic.innerHTML = active ? stopIcon() : micIcon();
+      }
+      const timer = composer.querySelector("[data-timer]");
+      if (timer) {
+        timer.classList.toggle("hidden", !active);
+        if (active) timer.textContent = formatTime(Date.now() - recStartedAt);
+      }
+      showDictation(fieldId);
+      renderClips(fieldId);
+    }
+
+    function renderClips(fieldId) {
+      const list = document.querySelector(`[data-clips="${fieldId}"]`);
+      if (!list) return;
+      list.innerHTML = "";
+      const clips = clipsFor(fieldId);
+      clips.forEach((clip) => {
+        const row = document.createElement("div");
+        row.className = "clip";
+        const player = document.createElement("audio");
+        player.controls = true;
+        player.src = clip.url;
+        player.preload = "metadata";
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "clip-remove";
+        remove.setAttribute("aria-label", t("deleteAudio"));
+        remove.textContent = "×";
+        remove.addEventListener("click", () => deleteClip(fieldId, clip.id));
+        row.append(player, remove);
+        list.append(row);
+      });
+      list.classList.toggle("hidden", clips.length === 0);
+      const label = list.previousElementSibling;
+      if (label?.classList.contains("hint")) label.classList.toggle("hidden", clips.length === 0);
+    }
+
+    async function startRecording(fieldId) {
+      state.error = "";
+      showError("");
+      try {
+        if (state.recordingId) await stopRecording();
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+        chunks = [];
+        state.recordingId = fieldId;
+        state.dictationBase[fieldId] = state[fieldTextKey(fieldId)] || "";
+        state.dictationFinal[fieldId] = "";
+        state.interim[fieldId] = "";
+        recStartedAt = Date.now();
+        startRecognition(fieldId);
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        const mimeType = pickMime();
+        recordStream = mediaStream.clone();
+        mediaRecorder = mimeType
+          ? new MediaRecorder(recordStream, { mimeType })
+          : new MediaRecorder(recordStream);
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const type = mediaRecorder.mimeType || mimeType || "audio/webm";
+          const blob = new Blob(chunks, { type });
+          if (blob.size > 0) {
+            clipsFor(fieldId).push({
+              id: crypto.randomUUID(),
+              blob,
+              url: URL.createObjectURL(blob),
+              mime: type,
+              ext: type.includes("mp4") ? "mp4" : type.includes("ogg") ? "ogg" : "webm",
+            });
+          }
+          mediaRecorder = null;
+          updateComposerChrome(fieldId);
+        };
+        mediaRecorder.start();
+        updateComposerChrome(fieldId);
+        recTimer = setInterval(() => {
+          const el = document.querySelector(`[data-recorder="${fieldId}"] [data-timer]`);
+          if (el) el.textContent = formatTime(Date.now() - recStartedAt);
+        }, 250);
+      } catch (err) {
+        state.error = t("micBlocked");
+        showError(state.error);
+      }
+    }
+
+    async function stopRecording() {
+      clearInterval(recTimer);
+      recTimer = null;
+      stopRecognition();
+      const id = state.recordingId;
+      state.recordingId = null;
+      state.interim[id] = "";
+      if (id) showDictation(id);
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        await new Promise((resolve) => {
+          mediaRecorder.addEventListener("stop", resolve, { once: true });
+          mediaRecorder.stop();
+        });
+      }
+      [mediaStream, recordStream].forEach((stream) => {
+        if (stream) stream.getTracks().forEach((track) => track.stop());
+      });
+      mediaStream = null;
+      recordStream = null;
+      if (id) updateComposerChrome(id);
+    }
+
+    function deleteClip(fieldId, clipId) {
+      const clips = clipsFor(fieldId);
+      const clip = clips.find((item) => item.id === clipId);
+      if (clip?.url) URL.revokeObjectURL(clip.url);
+      state.audio[fieldId] = clips.filter((item) => item.id !== clipId);
+      renderClips(fieldId);
+    }
+
+    async function toggleRecording(fieldId) {
+      if (state.recordingId === fieldId) await stopRecording();
+      else await startRecording(fieldId);
+    }
+
+    function textField({ id, label, valueKey, type = "text", placeholder, hint, withRecorder = true }) {
+      const field = document.createElement("div");
+      field.className = "field";
+      if (label || hint) {
+        const lab = document.createElement("label");
+        lab.setAttribute("for", id);
+        if (label) lab.textContent = label;
+        if (hint) {
+          const h = document.createElement("div");
+          h.className = "hint";
+          h.textContent = hint;
+          lab.append(h);
+        }
+        field.append(lab);
+      }
+
+      if (!withRecorder) {
+        const input = document.createElement("input");
+        input.type = type;
+        input.id = id;
+        if (type === "tel") input.autocomplete = "tel";
+        if (id === "farmer_name") input.autocomplete = "name";
+        input.value = state[valueKey] || "";
+        input.placeholder = placeholder || t("typeHere");
+        input.addEventListener("input", () => { state[valueKey] = input.value; });
+        field.append(input);
+        return field;
+      }
+
+      const composer = document.createElement("div");
+      composer.className = "composer";
+      composer.dataset.recorder = id;
+      const input = document.createElement("textarea");
+      input.id = id;
+      input.value = state[valueKey] || "";
+      input.placeholder = placeholder || t("typeOrSpeak");
+      input.addEventListener("input", () => { state[valueKey] = input.value; });
+      const tools = document.createElement("div");
+      tools.className = "composer-tools";
+      const timer = document.createElement("span");
+      timer.className = "timer hidden";
+      timer.dataset.timer = "1";
+      const mic = document.createElement("button");
+      mic.type = "button";
+      mic.className = "mic-btn";
+      mic.setAttribute("aria-label", t("record"));
+      mic.title = t("record");
+      mic.innerHTML = micIcon();
+      mic.addEventListener("click", () => toggleRecording(id));
+      tools.append(timer, mic);
+      const interim = document.createElement("div");
+      interim.className = "interim-line";
+      interim.dataset.live = id;
+      composer.append(input, tools);
+      field.append(composer, interim);
+
+      const clipLabel = document.createElement("div");
+      clipLabel.className = "hint";
+      clipLabel.textContent = t("recordings");
+      const clips = document.createElement("div");
+      clips.className = "clips";
+      clips.dataset.clips = id;
+      field.append(clipLabel, clips);
+      clipLabel.classList.toggle("hidden", clipsFor(id).length === 0);
+      renderClips(id);
+      if (clipsFor(id).length === 0) clips.classList.add("hidden");
+      updateComposerChrome(id);
+      return field;
+    }
+
+    function answered(textKey, transcriptKey, audioId) {
+      return Boolean(state[textKey].trim() || state[transcriptKey].trim() || clipsFor(audioId).length);
+    }
+
+    function validateForm() {
+      if (!state.farmer_name.trim()) return t("required");
+      const phone = state.farmer_phone.replace(/\D/g, "");
+      if (phone.length < 10) return t("phoneHint");
+      if (!answered("q1_text", "q1_transcript", "q1")) return t("required");
+      if (!answered("q2_text", "q2_transcript", "q2")) return t("required");
+      if (!state.q3_aware) return t("required");
+      return "";
+    }
+
+    function showError(message) {
+      const box = $("form-error");
+      if (!box) return;
+      box.classList.toggle("hidden", !message);
+      box.textContent = message || "";
+    }
+
+    function questionBlock(id, title, extra) {
+      const section = document.createElement("section");
+      section.className = "question";
+      const h = document.createElement("h2");
+      h.textContent = title;
+      section.append(h);
+      if (extra) section.append(extra);
+      return section;
+    }
+
+    function textOrNone(value) {
+      return (value && String(value).trim()) || t("none");
+    }
+
+    function renderAnswerBlock(root, title, text, transcript, urls) {
+      const box = document.createElement("div");
+      box.className = "response-q";
+      const h = document.createElement("h3");
+      h.textContent = title;
+      box.append(h);
+      const p = document.createElement("p");
+      p.textContent = textOrNone(text);
+      box.append(p);
+      if (transcript && transcript.trim() && transcript.trim() !== (text || "").trim()) {
+        const spoken = document.createElement("p");
+        spoken.className = "hint";
+        spoken.textContent = `${t("spoken")}: ${transcript}`;
+        box.append(spoken);
+      }
+      (urls || []).forEach((url) => {
+        const player = document.createElement("audio");
+        player.controls = true;
+        player.preload = "metadata";
+        player.src = url;
+        box.append(player);
+      });
+      root.append(box);
+    }
+
+    function renderResponses(root) {
+      const head = document.createElement("div");
+      head.className = "response-head";
+      const h = document.createElement("h2");
+      h.textContent = t("responsesTab");
+      const refresh = document.createElement("button");
+      refresh.type = "button";
+      refresh.className = "btn";
+      refresh.textContent = t("refresh");
+      refresh.disabled = state.responsesLoading;
+      refresh.addEventListener("click", () => loadResponses());
+      head.append(h, refresh);
+      root.append(head);
+
+      if (state.responsesLoading) {
+        const p = document.createElement("p");
+        p.className = "lead";
+        p.textContent = t("loadingResponses");
+        root.append(p);
+        return;
+      }
+      if (state.responsesError) {
+        const err = document.createElement("div");
+        err.className = "alert error";
+        err.textContent = state.responsesError;
+        root.append(err);
+        return;
+      }
+      if (!state.responses.length) {
+        const p = document.createElement("p");
+        p.className = "lead";
+        p.textContent = t("noResponses");
+        const help = document.createElement("div");
+        help.className = "alert";
+        help.textContent = t("emptyHelp");
+        const sql = document.createElement("pre");
+        sql.className = "sql-box";
+        sql.textContent = READ_POLICY_SQL;
+        root.append(p, help, sql);
+        return;
+      }
+
+      const list = document.createElement("div");
+      list.className = "response-list";
+      state.responses.forEach((row) => {
+        const open = Boolean(state.expandedIds[row.id]);
+        const clipCount = AUDIO_FIELDS.reduce(
+          (sum, field) => sum + (row[`${field}_audio_urls`] || []).length,
+          0
+        );
+        const when = row.created_at
+          ? new Date(row.created_at).toLocaleString(state.lang === "hi" ? "hi-IN" : "en-IN")
+          : "";
+
+        const card = document.createElement("article");
+        card.className = `response-card${open ? " open" : ""}`;
+
+        const summary = document.createElement("button");
+        summary.type = "button";
+        summary.className = "response-summary";
+        summary.setAttribute("aria-expanded", String(open));
+        const textWrap = document.createElement("div");
+        textWrap.className = "response-summary-text";
+        const name = document.createElement("strong");
+        name.textContent = row.farmer_name || t("none");
+        const meta = document.createElement("div");
+        meta.className = "response-meta";
+        meta.append(
+          document.createTextNode(row.farmer_phone || t("none")),
+          document.createTextNode(when),
+          document.createTextNode(String(row.language || "").toUpperCase())
+        );
+        if (clipCount) meta.append(document.createTextNode(`${clipCount} ${t("clipsLabel")}`));
+        textWrap.append(name, meta);
+        const chevron = document.createElement("span");
+        chevron.className = "response-chevron";
+        chevron.setAttribute("aria-hidden", "true");
+        chevron.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>`;
+        summary.append(textWrap, chevron);
+        summary.title = open ? t("collapseHint") : t("expandHint");
+
+        const body = document.createElement("div");
+        body.className = "response-body";
+        if (open) fillResponseBody(body, row);
+
+        summary.addEventListener("click", () => {
+          const next = !state.expandedIds[row.id];
+          state.expandedIds[row.id] = next;
+          card.classList.toggle("open", next);
+          summary.setAttribute("aria-expanded", String(next));
+          summary.title = next ? t("collapseHint") : t("expandHint");
+          if (next && !body.childElementCount) fillResponseBody(body, row);
+        });
+
+        card.append(summary, body);
+        list.append(card);
+      });
+      root.append(list);
+    }
+
+    function fillResponseBody(body, row) {
+      body.innerHTML = "";
+      renderAnswerBlock(body, t("q1"), row.q1_text, row.q1_transcript, row.q1_audio_urls);
+      renderAnswerBlock(body, t("q2"), row.q2_text, row.q2_transcript, row.q2_audio_urls);
+      const aware = row.q3_aware ? t(row.q3_aware) : t("none");
+      const q3Text = [aware, row.q3_text].filter(Boolean).join("\n");
+      renderAnswerBlock(body, t("q3"), q3Text, row.q3_transcript, row.q3_audio_urls);
+    }
+
+    function renderSuccess(root) {
+      root.classList.add("success");
+      const h = document.createElement("h2");
+      h.textContent = t("thanksTitle");
+      const p = document.createElement("p");
+      p.className = "lead";
+      p.textContent = t("thanksBody");
+      root.append(h, p);
+    }
+
+    function renderForm(root) {
+      const intro = document.createElement("h2");
+      intro.textContent = t("welcomeTitle");
+      root.append(intro);
+
+      if (!isConfigured()) {
+        const a = document.createElement("div");
+        a.className = "alert";
+        a.textContent = t("setup");
+        root.append(a);
+      }
+      if (inIframe()) {
+        const a = document.createElement("div");
+        a.className = "alert";
+        const link = document.createElement("a");
+        link.href = window.location.href;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = t("openTab");
+        a.append(document.createTextNode(t("iframeHint") + " "), link);
+        root.append(a);
+      }
+
+      const identity = document.createElement("div");
+      identity.className = "identity";
+      identity.append(
+        textField({
+          id: "farmer_name",
+          label: t("farmerName"),
+          valueKey: "farmer_name",
+          withRecorder: false,
+        }),
+        textField({
+          id: "farmer_phone",
+          label: t("farmerPhone"),
+          valueKey: "farmer_phone",
+          type: "tel",
+          hint: t("phoneHint"),
+          withRecorder: false,
+        })
+      );
+      root.append(identity);
+
+      const q1 = questionBlock( "q1", t("q1"));
+      q1.append(textField({ id: "q1", valueKey: "q1_text" }));
+      root.append(q1);
+
+      const q2 = questionBlock("q2", t("q2"));
+      q2.append(textField({ id: "q2", valueKey: "q2_text" }));
+      root.append(q2);
+
+      const choices = document.createElement("div");
+      choices.className = "choice-row";
+      choices.style.margin = "0 0 12px";
+      ["yes", "no", "unsure"].forEach((key) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice";
+        btn.setAttribute("aria-pressed", String(state.q3_aware === key));
+        btn.textContent = t(key);
+        btn.addEventListener("click", () => {
+          state.q3_aware = key;
+          choices.querySelectorAll(".choice").forEach((el) => {
+            el.setAttribute("aria-pressed", String(el === btn));
+          });
+          showError("");
+        });
+        choices.append(btn);
+      });
+      const q3 = questionBlock("q3", t("q3"), choices);
+      q3.append(textField({ id: "q3", label: t("q3Follow"), valueKey: "q3_text" }));
+      root.append(q3);
+
+      const err = document.createElement("div");
+      err.id = "form-error";
+      err.className = "alert error";
+      err.style.marginTop = "14px";
+      if (!state.error) err.classList.add("hidden");
+      err.textContent = state.error || "";
+      root.append(err);
+    }
+
+    function render() {
+      const lang = currentLang();
+      document.documentElement.lang = lang.code;
+      document.documentElement.dir = lang.dir || "ltr";
+      document.title = t("title");
+      $("title").textContent = t("title");
+      $("subtitle").textContent = t("subtitle");
+      renderViewSwitch();
+      renderLangSwitch();
+
+      const screen = $("screen");
+      screen.innerHTML = "";
+      screen.classList.remove("success");
+
+      const nav = $("nav");
+      nav.innerHTML = "";
+
+      if (state.view === "responses") {
+        renderResponses(screen);
+        return;
+      }
+
+      if (state.done) renderSuccess(screen);
+      else renderForm(screen);
+
+      if (state.done) {
+        const again = document.createElement("button");
+        again.className = "btn";
+        again.textContent = t("another");
+        again.addEventListener("click", resetForm);
+        nav.append(again);
+        return;
+      }
+
+      const submitBtn = document.createElement("button");
+      submitBtn.className = "btn btn-primary";
+      submitBtn.disabled = state.submitting || !isConfigured();
+      submitBtn.textContent = state.submitting ? t("submitting") : t("submit");
+      submitBtn.addEventListener("click", async () => {
+        if (state.recordingId) await stopRecording();
+        const problem = validateForm();
+        if (problem) {
+          state.error = problem;
+          showError(problem);
+          return;
+        }
+        state.error = "";
+        await submit();
+      });
+      nav.append(submitBtn);
+    }
+
+    function audioPath(id, fieldId, index, ext) {
+      return `${id}/${fieldId}-${index + 1}.${ext}`;
+    }
+
+    async function uploadAudio(client, id, fieldId) {
+      const clips = clipsFor(fieldId);
+      if (!clips.length) return null;
+      const paths = [];
+      for (let i = 0; i < clips.length; i += 1) {
+        const rec = clips[i];
+        const path = audioPath(id, fieldId, i, rec.ext);
+        const { error } = await client.storage
+          .from("climate-survey-audio")
+          .upload(path, rec.blob, { contentType: rec.mime, upsert: false });
+        if (error) throw error;
+        paths.push(path);
+      }
+      return JSON.stringify(paths);
+    }
+
+    async function submit() {
+      if (!isConfigured()) {
+        state.error = t("setup");
+        render();
+        return;
+      }
+      state.submitting = true;
+      state.error = "";
+      render();
+      try {
+        const client = getClient();
+        if (!client) throw new Error("missing supabase config");
+        const id = crypto.randomUUID();
+        const uploads = await Promise.all(
+          AUDIO_FIELDS.map((field) => uploadAudio(client, id, field))
+        );
+        const paths = Object.fromEntries(AUDIO_FIELDS.map((field, i) => [field, uploads[i]]));
+        const { error } = await client.from("climate_survey_responses").insert({
+          id,
+          language: state.lang,
+          farmer_name: state.farmer_name.trim(),
+          farmer_phone: state.farmer_phone.trim(),
+          farmer_name_transcript: null,
+          farmer_phone_transcript: null,
+          farmer_name_audio_path: null,
+          farmer_phone_audio_path: null,
+          q1_text: state.q1_text.trim() || null,
+          q1_transcript: state.q1_transcript.trim() || null,
+          q1_audio_path: paths.q1,
+          q2_text: state.q2_text.trim() || null,
+          q2_transcript: state.q2_transcript.trim() || null,
+          q2_audio_path: paths.q2,
+          q3_aware: state.q3_aware,
+          q3_text: state.q3_text.trim() || null,
+          q3_transcript: state.q3_transcript.trim() || null,
+          q3_audio_path: paths.q3,
+          user_agent: navigator.userAgent,
+        });
+        if (error) throw error;
+        state.done = true;
+        state.view = "responses";
+        await loadResponses();
+      } catch (err) {
+        console.error(err);
+        state.error = t("errorGeneric");
+      } finally {
+        state.submitting = false;
+        render();
+      }
+    }
+
+    function resetForm() {
+      AUDIO_FIELDS.forEach((fieldId) => {
+        clipsFor(fieldId).forEach((clip) => {
+          if (clip.url) URL.revokeObjectURL(clip.url);
+        });
+      });
+      state.farmer_name = "";
+      state.farmer_phone = "";
+      state.q1_text = "";
+      state.q1_transcript = "";
+      state.q2_text = "";
+      state.q2_transcript = "";
+      state.q3_aware = "";
+      state.q3_text = "";
+      state.q3_transcript = "";
+      state.audio = { q1: [], q2: [], q3: [] };
+      state.interim = {};
+      state.error = "";
+      state.done = false;
+      render();
+    }
+
+    window.addEventListener("beforeunload", () => {
+      [mediaStream, recordStream].forEach((stream) => {
+        if (stream) stream.getTracks().forEach((track) => track.stop());
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>
