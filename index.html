@@ -45,7 +45,7 @@ window.SURVEY_I18N = {
       recordings: "Recordings",
       noSpeech: "Live transcription is not available in this browser. You can still type and record.",
       micBlocked: "Microphone is blocked. Allow access or open this form in a new tab.",
-      iframeHint: "If the microphone does not work in this page, open it in a new tab.",
+      iframeHint: "If microphone, camera, or location does not work here, open this form in a new tab.",
       openTab: "Open in new tab",
       setup: "Add your Supabase URL and anon key before collecting responses.",
       required: "This field is required.",
@@ -61,7 +61,20 @@ window.SURVEY_I18N = {
       start: "Start",
       q0Title: "Farmer details",
       farmerName: "Farmer name",
-      farmerPhone: "Phone number",
+      villageName: "Village name",
+      farmerPhone: "Farmer phone number",
+      locationLabel: "Location",
+      locating: "Capturing GPS…",
+      locationOk: "Location captured",
+      locationDenied: "Allow location access, or open this form in a new tab.",
+      recaptureLocation: "Capture again",
+      openMap: "Open map",
+      farmerPhoto: "Picture of farmer",
+      photoHint: "Take or upload a photo. Name, village, GPS, and date are stamped on it.",
+      changePhoto: "Change photo",
+      photoRequired: "Farmer photo is required.",
+      locationRequired: "GPS location is required.",
+      villageRequired: "Village name is required.",
       farmerEmail: "Email",
       emailHint: "Enter a valid email address",
       continueGoogle: "Continue with Google",
@@ -70,8 +83,10 @@ window.SURVEY_I18N = {
       q1: "Have you noticed any changes in the weather this year?",
       q2: "How has the weather impacted your farming or your family?",
       q3: "Are you aware that these impacts are expected to intensify next year?",
-      q3Follow: "Add more if you wish",
+      q3Follow: "Explain your answer",
       probesLabel: "You can ask it this way:",
+      q1p1: "Have you noticed any changes in rainfall, temperature, or weather patterns this year compared with previous years?",
+      q1p2: "Was the timing or amount of rainfall different from what you normally experience?",
       q2p1: "How has the weather affected your crops, crop yield, or farming activities this year?",
       q2p2: "Have you faced any changes in irrigation needs, pests, or crop losses because of the weather?",
       q2p3: "Has the weather affected your family’s income, daily work, health, or other household activities?",
@@ -116,7 +131,7 @@ window.SURVEY_I18N = {
       recordings: "रिकॉर्डिंग",
       noSpeech: "ब्राउज़र में आवाज़-से-लेख उपलब्ध नहीं है। आप लिख भी सकते हैं।",
       micBlocked: "माइक्रोफ़ोन बंद है। अनुमति दें या नए टैब में खोलें।",
-      iframeHint: "माइक्रोफ़ोन फ़ॉर्म में काम न करे तो नए टैब में खोलें।",
+      iframeHint: "माइक, कैमरा या स्थान न चले तो नए टैब में खोलें।",
       openTab: "नए टैब में खोलें",
       setup: "सर्वे शुरू करने से पहले Supabase URL और anon key डालें।",
       required: "यह जानकारी ज़रूरी है।",
@@ -132,7 +147,20 @@ window.SURVEY_I18N = {
       start: "शुरू करें",
       q0Title: "किसान की जानकारी",
       farmerName: "किसान का नाम",
-      farmerPhone: "फ़ोन नंबर",
+      villageName: "गाँव का नाम",
+      farmerPhone: "किसान का फ़ोन नंबर",
+      locationLabel: "स्थान",
+      locating: "स्थान लिया जा रहा है…",
+      locationOk: "स्थान मिल गया",
+      locationDenied: "स्थान की अनुमति दें, या फ़ॉर्म नए टैब में खोलें।",
+      recaptureLocation: "फिर से लें",
+      openMap: "नक्शा खोलें",
+      farmerPhoto: "किसान की तस्वीर",
+      photoHint: "तस्वीर लें या अपलोड करें। उस पर नाम, गाँव, स्थान और तारीख की मोहर लगेगी।",
+      changePhoto: "तस्वीर बदलें",
+      photoRequired: "किसान की तस्वीर ज़रूरी है।",
+      locationRequired: "स्थान ज़रूरी है।",
+      villageRequired: "गाँव का नाम ज़रूरी है।",
       farmerEmail: "ईमेल",
       emailHint: "सही ईमेल पता लिखें",
       continueGoogle: "Google से जारी रखें",
@@ -141,8 +169,10 @@ window.SURVEY_I18N = {
       q1: "क्या आपने इस साल मौसम में कोई बदलाव देखा है?",
       q2: "मौसम का आपकी खेती या परिवार पर क्या असर हुआ है?",
       q3: "क्या आप जानते हैं कि ये प्रभाव अगले साल और तेज़ होने वाले हैं?",
-      q3Follow: "अगर चाहें तो और बताएँ",
+      q3Follow: "अपना उत्तर बताएँ",
       probesLabel: "इस तरह भी पूछ सकते हैं:",
+      q1p1: "क्या आपने पिछले सालों की तुलना में इस साल बारिश, तापमान या मौसम के पैटर्न में कोई बदलाव देखा है?",
+      q1p2: "क्या बारिश का समय या मात्रा आपके सामान्य अनुभव से अलग थी?",
       q2p1: "इस साल मौसम का आपकी फसल, पैदावार या खेती के काम पर क्या असर हुआ है?",
       q2p2: "मौसम की वजह से सिंचाई, कीट-पतंग या फसल नुकसान में कोई बदलाव आया है?",
       q2p3: "मौसम का आपके परिवार की आमदनी, रोज़ के काम, सेहत या घर के अन्य कामों पर असर पड़ा है?",
@@ -282,11 +312,62 @@ window.SURVEY_I18N = {
 
     .identity {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 12px;
     }
 
     .identity .field { margin-bottom: 0; }
+
+    .profile-extra { margin-top: 12px; display: grid; gap: 12px; }
+
+    .location-box, .photo-box {
+      border: 1px solid hsl(var(--border));
+      background: hsl(var(--background));
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+
+    .location-box strong, .photo-box strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.92rem;
+    }
+
+    .location-coords {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .photo-preview {
+      width: 100%;
+      max-height: 280px;
+      object-fit: cover;
+      border-radius: calc(var(--radius) - 4px);
+      margin: 8px 0;
+      background: hsl(var(--muted));
+    }
+
+    .photo-box input[type="file"] { width: 100%; }
+
+    .location-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+    }
+
+    .location-actions a { font-weight: 600; }
+
+    .response-photo {
+      width: 100%;
+      max-width: 420px;
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      display: block;
+      background: hsl(var(--muted));
+    }
 
     @media (max-width: 560px) {
       .identity { grid-template-columns: 1fr; }
@@ -699,7 +780,15 @@ window.SURVEY_I18N = {
     const state = {
       lang: DEFAULT_LANG,
       farmer_name: "",
+      village_name: "",
       farmer_phone: "",
+      latitude: null,
+      longitude: null,
+      locationAccuracy: null,
+      locationStatus: "idle",
+      photoOriginal: null,
+      photoFile: null,
+      photoPreviewUrl: "",
       q1_text: "",
       q2_text: "",
       q3_aware: "",
@@ -1076,9 +1165,16 @@ create policy "anon_can_read_survey_audio"
         input.id = id;
         if (type === "tel") input.autocomplete = "tel";
         if (id === "farmer_name") input.autocomplete = "name";
+        if (id === "village_name") input.autocomplete = "address-level2";
+        input.required = true;
         input.value = state[valueKey] || "";
         input.placeholder = placeholder || t("typeHere");
         input.addEventListener("input", () => { state[valueKey] = input.value; });
+        input.addEventListener("blur", () => {
+          if ((id === "farmer_name" || id === "village_name") && state.photoOriginal) {
+            refreshWatermarkedPhoto().then(paintPhotoBox).catch(console.error);
+          }
+        });
         field.append(input);
         return field;
       }
@@ -1125,13 +1221,223 @@ create policy "anon_can_read_survey_audio"
       return Boolean(state[textKey].trim() || clipsFor(audioId).length);
     }
 
+    function requiredLabel(label) {
+      return `${label} *`;
+    }
+
+    function mapsUrl(lat, lng) {
+      return `https://maps.google.com/?q=${lat},${lng}`;
+    }
+
+    function loadImageFile(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("Could not read photo"));
+        };
+        img.src = url;
+      });
+    }
+
+    async function watermarkImage(file) {
+      const img = await loadImageFile(file);
+      const max = 1600;
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+      if (w > max || h > max) {
+        const scale = max / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const pad = Math.max(12, Math.round(w * 0.03));
+      const fontSize = Math.max(16, Math.round(w * 0.028));
+      const lineH = Math.round(fontSize * 1.35);
+      const name = state.farmer_name.trim() || "—";
+      const village = state.village_name.trim() || "—";
+      const phone = state.farmer_phone.trim() || "—";
+      const lat = state.latitude != null ? state.latitude.toFixed(6) : "—";
+      const lng = state.longitude != null ? state.longitude.toFixed(6) : "—";
+      const when = new Date().toLocaleString(state.lang === "hi" ? "hi-IN" : "en-IN");
+      const lines = [
+        t("title"),
+        `${t("farmerName")}: ${name}`,
+        `${t("villageName")}: ${village}`,
+        `${t("farmerPhone")}: ${phone}`,
+        `${lat}, ${lng}`,
+        when,
+      ];
+      const barH = pad * 2 + lineH * lines.length;
+      const grad = ctx.createLinearGradient(0, h - barH - 48, 0, h);
+      grad.addColorStop(0, "rgba(0,0,0,0)");
+      grad.addColorStop(0.3, "rgba(0,0,0,0.55)");
+      grad.addColorStop(1, "rgba(0,0,0,0.8)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, h - barH - 48, w, barH + 48);
+      ctx.fillStyle = "#fff";
+      ctx.font = `600 ${fontSize}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.textBaseline = "top";
+      lines.forEach((line, i) => {
+        ctx.fillText(line, pad, h - barH + pad + i * lineH, w - pad * 2);
+      });
+
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) reject(new Error("Could not watermark photo"));
+          else resolve(blob);
+        }, "image/jpeg", 0.86);
+      });
+    }
+
+    async function refreshWatermarkedPhoto() {
+      if (!state.photoOriginal) return;
+      const blob = await watermarkImage(state.photoOriginal);
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+      state.photoFile = blob;
+      state.photoPreviewUrl = URL.createObjectURL(blob);
+    }
+
+    function paintLocationBox() {
+      const box = $("location-box");
+      if (!box) return;
+      box.replaceWith(locationBox());
+    }
+
+    function paintPhotoBox() {
+      const box = $("photo-box");
+      if (!box) return;
+      box.replaceWith(photoBox());
+    }
+
+    function startLocationCapture() {
+      if (!navigator.geolocation) {
+        state.locationStatus = "error";
+        paintLocationBox();
+        return;
+      }
+      state.locationStatus = "pending";
+      paintLocationBox();
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          state.latitude = pos.coords.latitude;
+          state.longitude = pos.coords.longitude;
+          state.locationAccuracy = pos.coords.accuracy;
+          state.locationStatus = "ok";
+          paintLocationBox();
+          if (state.photoOriginal) {
+            refreshWatermarkedPhoto().then(paintPhotoBox).catch(console.error);
+          }
+        },
+        () => {
+          state.locationStatus = "error";
+          paintLocationBox();
+        },
+        { enableHighAccuracy: true, timeout: 25000, maximumAge: 15000 }
+      );
+    }
+
+    function locationBox() {
+      const box = document.createElement("div");
+      box.className = "location-box";
+      box.id = "location-box";
+      const title = document.createElement("strong");
+      title.textContent = requiredLabel(t("locationLabel"));
+      const status = document.createElement("div");
+      const actions = document.createElement("div");
+      actions.className = "location-actions";
+
+      if (state.locationStatus === "ok" && state.latitude != null && state.longitude != null) {
+        status.className = "location-coords";
+        const acc = state.locationAccuracy != null ? ` ±${Math.round(state.locationAccuracy)}m` : "";
+        status.textContent = `${state.latitude.toFixed(6)}, ${state.longitude.toFixed(6)}${acc}`;
+        const map = document.createElement("a");
+        map.href = mapsUrl(state.latitude, state.longitude);
+        map.target = "_blank";
+        map.rel = "noopener";
+        map.textContent = t("openMap");
+        actions.append(map);
+      } else if (state.locationStatus === "error") {
+        status.className = "hint";
+        status.textContent = t("locationDenied");
+      } else {
+        status.className = "hint";
+        status.textContent = t("locating");
+      }
+
+      const recapture = document.createElement("button");
+      recapture.type = "button";
+      recapture.className = "btn";
+      recapture.textContent = t("recaptureLocation");
+      recapture.addEventListener("click", () => startLocationCapture());
+      actions.append(recapture);
+      box.append(title, status, actions);
+      return box;
+    }
+
+    function photoBox() {
+      const box = document.createElement("div");
+      box.className = "photo-box";
+      box.id = "photo-box";
+      const title = document.createElement("strong");
+      title.textContent = requiredLabel(t("farmerPhoto"));
+      const hint = document.createElement("div");
+      hint.className = "hint";
+      hint.textContent = t("photoHint");
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.setAttribute("capture", "environment");
+      input.id = "farmer-photo";
+      input.addEventListener("change", async () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        state.photoOriginal = file;
+        try {
+          await refreshWatermarkedPhoto();
+          paintPhotoBox();
+          showError("");
+        } catch (err) {
+          console.error(err);
+          state.photoOriginal = null;
+          state.photoFile = null;
+          state.error = t("photoRequired");
+          showError(state.error);
+        }
+      });
+      box.append(title, hint);
+      if (state.photoPreviewUrl) {
+        const img = document.createElement("img");
+        img.className = "photo-preview";
+        img.alt = t("farmerPhoto");
+        img.src = state.photoPreviewUrl;
+        box.append(img);
+      }
+      box.append(input);
+      return box;
+    }
+
     function validateForm() {
       if (!state.farmer_name.trim()) return t("required");
+      if (!state.village_name.trim()) return t("villageRequired");
       const phone = state.farmer_phone.replace(/\D/g, "");
       if (phone.length < 10) return t("phoneHint");
+      if (state.latitude == null || state.longitude == null) return t("locationRequired");
+      if (!state.photoOriginal || !state.photoFile) return t("photoRequired");
       if (!answered("q1_text", "q1")) return t("required");
       if (!answered("q2_text", "q2")) return t("required");
       if (!state.q3_aware) return t("required");
+      if (!answered("q3_text", "q3")) return t("required");
       return "";
     }
 
@@ -1162,7 +1468,7 @@ create policy "anon_can_read_survey_audio"
       const section = document.createElement("section");
       section.className = "question";
       const h = document.createElement("h2");
-      h.textContent = title;
+      h.textContent = requiredLabel(title);
       section.append(h);
       if (probes?.length) section.append(probeList(probes));
       if (extra) section.append(extra);
@@ -1256,7 +1562,7 @@ create policy "anon_can_read_survey_audio"
         const textWrap = document.createElement("div");
         textWrap.className = "response-summary-text";
         const name = document.createElement("strong");
-        name.textContent = row.farmer_name || t("none");
+        name.textContent = [row.farmer_name, row.village_name].filter(Boolean).join(" · ") || t("none");
         const meta = document.createElement("div");
         meta.className = "response-meta";
         meta.append(
@@ -1294,11 +1600,34 @@ create policy "anon_can_read_survey_audio"
 
     function fillResponseBody(body, row) {
       body.innerHTML = "";
-        renderAnswerBlock(body, t("q1"), row.q1_text, row.q1_audio_urls);
-        renderAnswerBlock(body, t("q2"), row.q2_text, row.q2_audio_urls);
-        const aware = row.q3_aware ? t(row.q3_aware) : t("none");
-        const q3Text = [aware, row.q3_text].filter(Boolean).join("\n");
-        renderAnswerBlock(body, t("q3"), q3Text, row.q3_audio_urls);
+      if (row.farmer_photo_url) {
+        const img = document.createElement("img");
+        img.className = "response-photo";
+        img.alt = row.farmer_name || t("farmerPhoto");
+        img.src = row.farmer_photo_url;
+        body.append(img);
+      }
+      renderAnswerBlock(body, t("villageName"), row.village_name);
+      if (row.latitude != null && row.longitude != null) {
+        const locBox = document.createElement("div");
+        locBox.className = "response-q";
+        const locH = document.createElement("h3");
+        locH.textContent = t("locationLabel");
+        const locP = document.createElement("p");
+        locP.textContent = `${Number(row.latitude).toFixed(6)}, ${Number(row.longitude).toFixed(6)}`;
+        const locA = document.createElement("a");
+        locA.href = mapsUrl(row.latitude, row.longitude);
+        locA.target = "_blank";
+        locA.rel = "noopener";
+        locA.textContent = t("openMap");
+        locBox.append(locH, locP, locA);
+        body.append(locBox);
+      }
+      renderAnswerBlock(body, t("q1"), row.q1_text, row.q1_audio_urls);
+      renderAnswerBlock(body, t("q2"), row.q2_text, row.q2_audio_urls);
+      const aware = row.q3_aware ? t(row.q3_aware) : t("none");
+      const q3Text = [aware, row.q3_text].filter(Boolean).join("\n");
+      renderAnswerBlock(body, t("q3"), q3Text, row.q3_audio_urls);
     }
 
     function renderSuccess(root) {
@@ -1334,27 +1663,41 @@ create policy "anon_can_read_survey_audio"
         root.append(a);
       }
 
+      const profileHead = document.createElement("h2");
+      profileHead.textContent = requiredLabel(t("q0Title"));
+      root.append(profileHead);
+
       const identity = document.createElement("div");
       identity.className = "identity";
       identity.append(
         textField({
           id: "farmer_name",
-          label: t("farmerName"),
+          label: requiredLabel(t("farmerName")),
           valueKey: "farmer_name",
           withRecorder: false,
         }),
         textField({
+          id: "village_name",
+          label: requiredLabel(t("villageName")),
+          valueKey: "village_name",
+          withRecorder: false,
+        }),
+        textField({
           id: "farmer_phone",
-          label: t("farmerPhone"),
+          label: requiredLabel(t("farmerPhone")),
           valueKey: "farmer_phone",
           type: "tel",
           hint: t("phoneHint"),
           withRecorder: false,
         })
       );
-      root.append(identity);
+      const extras = document.createElement("div");
+      extras.className = "profile-extra";
+      extras.append(locationBox(), photoBox());
+      root.append(identity, extras);
+      if (state.locationStatus === "idle") startLocationCapture();
 
-      const q1 = questionBlock( "q1", t("q1"));
+      const q1 = questionBlock("q1", t("q1"), null, ["q1p1", "q1p2"]);
       q1.append(textField({ id: "q1", valueKey: "q1_text" }));
       root.append(q1);
 
@@ -1381,7 +1724,7 @@ create policy "anon_can_read_survey_audio"
         choices.append(btn);
       });
       const q3 = questionBlock("q3", t("q3"), choices, ["q3p1", "q3p2", "q3p3"]);
-      q3.append(textField({ id: "q3", label: t("q3Follow"), valueKey: "q3_text" }));
+      q3.append(textField({ id: "q3", label: requiredLabel(t("q3Follow")), valueKey: "q3_text" }));
       root.append(q3);
 
       const err = document.createElement("div");
@@ -1453,6 +1796,16 @@ create policy "anon_can_read_survey_audio"
       return client.storage.from("climate-survey-audio").getPublicUrl(path).data.publicUrl;
     }
 
+    async function uploadPhoto(client, id) {
+      const blob = await watermarkImage(state.photoOriginal);
+      const path = `${id}/farmer-photo.jpg`;
+      const { error } = await client.storage
+        .from("climate-survey-audio")
+        .upload(path, blob, { contentType: "image/jpeg", upsert: false });
+      if (error) throw error;
+      return publicAudioUrl(client, path);
+    }
+
     async function uploadAudio(client, id, fieldId) {
       const clips = clipsFor(fieldId);
       if (!clips.length) return null;
@@ -1482,22 +1835,29 @@ create policy "anon_can_read_survey_audio"
         const client = getClient();
         if (!client) throw new Error("missing supabase config");
         const id = crypto.randomUUID();
-        const uploads = await Promise.all(
-          AUDIO_FIELDS.map((field) => uploadAudio(client, id, field))
-        );
-        const paths = Object.fromEntries(AUDIO_FIELDS.map((field, i) => [field, uploads[i]]));
+        const [q1Url, q2Url, q3Url, photoUrl] = await Promise.all([
+          uploadAudio(client, id, "q1"),
+          uploadAudio(client, id, "q2"),
+          uploadAudio(client, id, "q3"),
+          uploadPhoto(client, id),
+        ]);
         const { error } = await client.from("climate_survey_responses").insert({
           id,
           language: state.lang,
           farmer_name: state.farmer_name.trim(),
+          village_name: state.village_name.trim(),
           farmer_phone: state.farmer_phone.trim(),
+          latitude: state.latitude,
+          longitude: state.longitude,
+          location_accuracy: state.locationAccuracy,
+          farmer_photo_url: photoUrl,
           q1_text: state.q1_text.trim() || null,
-          q1_audio_url: paths.q1,
+          q1_audio_url: q1Url,
           q2_text: state.q2_text.trim() || null,
-          q2_audio_url: paths.q2,
+          q2_audio_url: q2Url,
           q3_aware: state.q3_aware,
           q3_text: state.q3_text.trim() || null,
-          q3_audio_url: paths.q3,
+          q3_audio_url: q3Url,
         });
         if (error) throw error;
         state.done = true;
@@ -1519,7 +1879,16 @@ create policy "anon_can_read_survey_audio"
         });
       });
       state.farmer_name = "";
+      state.village_name = "";
       state.farmer_phone = "";
+      state.latitude = null;
+      state.longitude = null;
+      state.locationAccuracy = null;
+      state.locationStatus = "idle";
+      if (state.photoPreviewUrl) URL.revokeObjectURL(state.photoPreviewUrl);
+      state.photoOriginal = null;
+      state.photoFile = null;
+      state.photoPreviewUrl = "";
       state.q1_text = "";
       state.q2_text = "";
       state.q3_aware = "";
