@@ -10,7 +10,7 @@ create table if not exists public.climate_survey_responses (
   farmer_name_audio_path text,
   farmer_phone_audio_path text,
   q1_text text,
-  q1_transcript text,
+  q1_transcript text, -- filled later from stored audio
   q1_audio_path text,
   q2_text text,
   q2_transcript text,
