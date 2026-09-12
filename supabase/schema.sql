@@ -46,10 +46,10 @@ create policy "anon_can_read_survey"
   to anon, authenticated
   using (true);
 
--- Audio files. Keep the bucket private; review clips in Storage or via signed URLs.
+-- Public bucket so the table can store clickable audio URLs.
 insert into storage.buckets (id, name, public)
-values ('climate-survey-audio', 'climate-survey-audio', false)
-on conflict (id) do nothing;
+values ('climate-survey-audio', 'climate-survey-audio', true)
+on conflict (id) do update set public = true;
 
 drop policy if exists "anon_can_upload_survey_audio" on storage.objects;
 create policy "anon_can_upload_survey_audio"
