@@ -812,6 +812,7 @@ window.SURVEY_I18N = {
     let chunks = [];
     let recTimer = null;
     let recStartedAt = 0;
+    let wavCapture = null;
 
     const currentLang = () =>
       I18N.languages.find((lang) => lang.code === state.lang) ||
@@ -994,14 +995,133 @@ create policy "anon_can_read_survey_audio"
       try { return window.self !== window.top; } catch { return true; }
     }
 
+    function isAppleMobile() {
+      const ua = navigator.userAgent || "";
+      if (/iPad|iPhone|iPod/.test(ua)) return true;
+      return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    }
+
     function pickMime() {
-      const types = [
+      if (!window.MediaRecorder) return "";
+      const apple = [
+        "audio/mp4",
+        "audio/mp4;codecs=mp4a.40.2",
+        "audio/aac",
+        "audio/x-m4a",
+        "video/mp4",
+      ];
+      const others = [
         "audio/webm;codecs=opus",
         "audio/webm",
         "audio/mp4",
         "audio/ogg;codecs=opus",
       ];
-      return types.find((type) => window.MediaRecorder && MediaRecorder.isTypeSupported(type)) || "";
+      const types = isAppleMobile() ? apple : others;
+      return types.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+    }
+
+    function extensionForMime(type) {
+      const value = String(type || "").toLowerCase();
+      if (value.includes("wav")) return "wav";
+      if (value.includes("aac") || value.includes("m4a") || value.includes("mp4")) return "m4a";
+      if (value.includes("ogg")) return "ogg";
+      if (value.includes("mpeg") || value.includes("mp3")) return "mp3";
+      return "webm";
+    }
+
+    function attachAudio(player, url, mime) {
+      player.controls = true;
+      player.preload = "metadata";
+      player.setAttribute("playsinline", "");
+      player.setAttribute("webkit-playsinline", "");
+      player.removeAttribute("src");
+      player.innerHTML = "";
+      const source = document.createElement("source");
+      source.src = url;
+      if (mime) source.type = String(mime).split(";")[0];
+      player.append(source);
+      player.load();
+    }
+
+    function mergeFloat32(parts) {
+      const length = parts.reduce((sum, part) => sum + part.length, 0);
+      const samples = new Float32Array(length);
+      let offset = 0;
+      parts.forEach((part) => {
+        samples.set(part, offset);
+        offset += part.length;
+      });
+      return samples;
+    }
+
+    function encodeWav(samples, sampleRate) {
+      const bytes = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(bytes);
+      const write = (offset, text) => {
+        for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
+      };
+      write(0, "RIFF");
+      view.setUint32(4, 36 + samples.length * 2, true);
+      write(8, "WAVE");
+      write(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      write(36, "data");
+      view.setUint32(40, samples.length * 2, true);
+      let offset = 44;
+      for (let i = 0; i < samples.length; i += 1, offset += 2) {
+        const sample = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      }
+      return new Blob([bytes], { type: "audio/wav" });
+    }
+
+    async function startWavCapture(stream) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const context = new Ctx();
+      if (context.state === "suspended") await context.resume();
+      const source = context.createMediaStreamSource(stream);
+      const processor = context.createScriptProcessor(4096, 1, 1);
+      const mute = context.createGain();
+      mute.gain.value = 0;
+      const parts = [];
+      processor.onaudioprocess = (event) => {
+        parts.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+      };
+      source.connect(processor);
+      processor.connect(mute);
+      mute.connect(context.destination);
+      wavCapture = { context, source, processor, mute, parts };
+    }
+
+    function stopWavCapture() {
+      const capture = wavCapture;
+      wavCapture = null;
+      if (!capture) return null;
+      capture.processor.onaudioprocess = null;
+      capture.source.disconnect();
+      capture.processor.disconnect();
+      capture.mute.disconnect();
+      const sampleRate = capture.context.sampleRate || 44100;
+      capture.context.close();
+      if (!capture.parts.length) return null;
+      return encodeWav(mergeFloat32(capture.parts), sampleRate);
+    }
+
+    function addClip(fieldId, blob, mime) {
+      if (!blob || !blob.size) return;
+      clipsFor(fieldId).push({
+        id: crypto.randomUUID(),
+        blob,
+        url: URL.createObjectURL(blob),
+        mime,
+        ext: extensionForMime(mime),
+      });
     }
 
     function formatTime(ms) {
@@ -1052,9 +1172,7 @@ create policy "anon_can_read_survey_audio"
         const row = document.createElement("div");
         row.className = "clip";
         const player = document.createElement("audio");
-        player.controls = true;
-        player.src = clip.url;
-        player.preload = "metadata";
+        attachAudio(player, clip.url, clip.mime);
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "clip-remove";
@@ -1075,32 +1193,31 @@ create policy "anon_can_read_survey_audio"
       try {
         if (state.recordingId) await stopRecording();
         mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true },
+          audio: isAppleMobile() ? true : { echoCancellation: true, noiseSuppression: true },
         });
         chunks = [];
         state.recordingId = fieldId;
         recStartedAt = Date.now();
-        const mimeType = pickMime();
-        mediaRecorder = mimeType
-          ? new MediaRecorder(mediaStream, { mimeType })
-          : new MediaRecorder(mediaStream);
-        mediaRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-        mediaRecorder.onstop = () => {
-          const type = mediaRecorder.mimeType || mimeType || "audio/webm";
-          const blob = new Blob(chunks, { type });
-          if (blob.size > 0) {
-            clipsFor(fieldId).push({
-              id: crypto.randomUUID(),
-              blob,
-              url: URL.createObjectURL(blob),
-              mime: type,
-              ext: type.includes("mp4") ? "mp4" : type.includes("ogg") ? "ogg" : "webm",
-            });
-          }
-          mediaRecorder = null;
-          updateComposerChrome(fieldId);
-        };
-        mediaRecorder.start();
+        if (isAppleMobile()) {
+          await startWavCapture(mediaStream);
+        } else {
+          const mimeType = pickMime();
+          mediaRecorder = mimeType
+            ? new MediaRecorder(mediaStream, { mimeType })
+            : new MediaRecorder(mediaStream);
+          mediaRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+          mediaRecorder.onstop = () => {
+            const type =
+              mediaRecorder.mimeType ||
+              mimeType ||
+              (chunks[0] && chunks[0].type) ||
+              "audio/webm";
+            addClip(fieldId, new Blob(chunks, { type }), type);
+            mediaRecorder = null;
+            updateComposerChrome(fieldId);
+          };
+          mediaRecorder.start(1000);
+        }
         updateComposerChrome(fieldId);
         recTimer = setInterval(() => {
           const el = document.querySelector(`[data-recorder="${fieldId}"] [data-timer]`);
@@ -1122,6 +1239,10 @@ create policy "anon_can_read_survey_audio"
           mediaRecorder.addEventListener("stop", resolve, { once: true });
           mediaRecorder.stop();
         });
+      }
+      if (wavCapture && id) {
+        const wav = stopWavCapture();
+        addClip(id, wav, "audio/wav");
       }
       if (mediaStream) {
         mediaStream.getTracks().forEach((track) => track.stop());
@@ -1490,9 +1611,7 @@ create policy "anon_can_read_survey_audio"
       box.append(p);
       (urls || []).forEach((url) => {
         const player = document.createElement("audio");
-        player.controls = true;
-        player.preload = "metadata";
-        player.src = url;
+        attachAudio(player, url, url.includes(".wav") ? "audio/wav" : url.includes(".m4a") || url.includes(".mp4") ? "audio/mp4" : "");
         box.append(player);
       });
       root.append(box);
