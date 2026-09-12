@@ -783,7 +783,7 @@ window.SURVEY_I18N = {
     async function resolveRowAudio(client, row) {
       const next = { ...row };
       for (const field of AUDIO_FIELDS) {
-        const refs = parseAudioRefs(row[`${field}_audio_path`]);
+        const refs = parseAudioRefs(row[`${field}_audio_url`] || row[`${field}_audio_path`]);
         const urls = [];
         for (const ref of refs) {
           const url = await toPlayableUrl(client, ref);
@@ -1173,7 +1173,7 @@ create policy "anon_can_read_survey_audio"
       return (value && String(value).trim()) || t("none");
     }
 
-    function renderAnswerBlock(root, title, text, transcript, urls) {
+    function renderAnswerBlock(root, title, text, urls) {
       const box = document.createElement("div");
       box.className = "response-q";
       const h = document.createElement("h3");
@@ -1182,12 +1182,6 @@ create policy "anon_can_read_survey_audio"
       const p = document.createElement("p");
       p.textContent = textOrNone(text);
       box.append(p);
-      if (transcript && transcript.trim() && transcript.trim() !== (text || "").trim()) {
-        const spoken = document.createElement("p");
-        spoken.className = "hint";
-        spoken.textContent = `${t("spoken")}: ${transcript}`;
-        box.append(spoken);
-      }
       (urls || []).forEach((url) => {
         const player = document.createElement("audio");
         player.controls = true;
@@ -1300,11 +1294,11 @@ create policy "anon_can_read_survey_audio"
 
     function fillResponseBody(body, row) {
       body.innerHTML = "";
-      renderAnswerBlock(body, t("q1"), row.q1_text, row.q1_transcript, row.q1_audio_urls);
-      renderAnswerBlock(body, t("q2"), row.q2_text, row.q2_transcript, row.q2_audio_urls);
-      const aware = row.q3_aware ? t(row.q3_aware) : t("none");
-      const q3Text = [aware, row.q3_text].filter(Boolean).join("\n");
-      renderAnswerBlock(body, t("q3"), q3Text, row.q3_transcript, row.q3_audio_urls);
+        renderAnswerBlock(body, t("q1"), row.q1_text, row.q1_audio_urls);
+        renderAnswerBlock(body, t("q2"), row.q2_text, row.q2_audio_urls);
+        const aware = row.q3_aware ? t(row.q3_aware) : t("none");
+        const q3Text = [aware, row.q3_text].filter(Boolean).join("\n");
+        renderAnswerBlock(body, t("q3"), q3Text, row.q3_audio_urls);
     }
 
     function renderSuccess(root) {
@@ -1497,21 +1491,13 @@ create policy "anon_can_read_survey_audio"
           language: state.lang,
           farmer_name: state.farmer_name.trim(),
           farmer_phone: state.farmer_phone.trim(),
-          farmer_name_transcript: null,
-          farmer_phone_transcript: null,
-          farmer_name_audio_path: null,
-          farmer_phone_audio_path: null,
           q1_text: state.q1_text.trim() || null,
-          q1_transcript: null,
-          q1_audio_path: paths.q1,
+          q1_audio_url: paths.q1,
           q2_text: state.q2_text.trim() || null,
-          q2_transcript: null,
-          q2_audio_path: paths.q2,
+          q2_audio_url: paths.q2,
           q3_aware: state.q3_aware,
           q3_text: state.q3_text.trim() || null,
-          q3_transcript: null,
-          q3_audio_path: paths.q3,
-          user_agent: navigator.userAgent,
+          q3_audio_url: paths.q3,
         });
         if (error) throw error;
         state.done = true;

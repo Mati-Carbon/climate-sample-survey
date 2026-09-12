@@ -1,26 +1,17 @@
--- Climate survey: run this in Supabase → SQL Editor
+-- Climate survey: run this in a new project (SQL Editor)
 
 create table if not exists public.climate_survey_responses (
   id uuid primary key default gen_random_uuid(),
-  language text not null default 'hi',
+  language text not null default 'en',
   farmer_name text,
   farmer_phone text,
-  farmer_email text,
-  farmer_name_transcript text,
-  farmer_phone_transcript text,
-  farmer_name_audio_path text,
-  farmer_phone_audio_path text,
   q1_text text,
-  q1_transcript text, -- filled later from stored audio
-  q1_audio_path text,
+  q1_audio_url text,
   q2_text text,
-  q2_transcript text,
-  q2_audio_path text,
+  q2_audio_url text,
   q3_aware text,
   q3_text text,
-  q3_transcript text,
-  q3_audio_path text,
-  user_agent text,
+  q3_audio_url text,
   created_at timestamptz not null default now()
 );
 
@@ -46,7 +37,6 @@ create policy "anon_can_read_survey"
   to anon, authenticated
   using (true);
 
--- Public bucket so the table can store clickable audio URLs.
 insert into storage.buckets (id, name, public)
 values ('climate-survey-audio', 'climate-survey-audio', true)
 on conflict (id) do update set public = true;
