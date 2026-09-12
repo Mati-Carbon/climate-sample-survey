@@ -1187,14 +1187,37 @@ create policy "anon_can_read_survey_audio"
       if (label?.classList.contains("hint")) label.classList.toggle("hidden", clips.length === 0);
     }
 
+    function liveMicStream() {
+      if (!mediaStream) return null;
+      const live = mediaStream.getAudioTracks().some((track) => track.readyState === "live");
+      if (live) return mediaStream;
+      mediaStream.getTracks().forEach((track) => track.stop());
+      mediaStream = null;
+      return null;
+    }
+
+    async function ensureMicStream() {
+      const existing = liveMicStream();
+      if (existing) return existing;
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: isAppleMobile() ? true : { echoCancellation: true, noiseSuppression: true },
+      });
+      return mediaStream;
+    }
+
+    function releaseMicStream() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+        mediaStream = null;
+      }
+    }
+
     async function startRecording(fieldId) {
       state.error = "";
       showError("");
       try {
         if (state.recordingId) await stopRecording();
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: isAppleMobile() ? true : { echoCancellation: true, noiseSuppression: true },
-        });
+        mediaStream = await ensureMicStream();
         chunks = [];
         state.recordingId = fieldId;
         recStartedAt = Date.now();
@@ -1243,10 +1266,6 @@ create policy "anon_can_read_survey_audio"
       if (wavCapture && id) {
         const wav = stopWavCapture();
         addClip(id, wav, "audio/wav");
-      }
-      if (mediaStream) {
-        mediaStream.getTracks().forEach((track) => track.stop());
-        mediaStream = null;
       }
       if (id) updateComposerChrome(id);
     }
@@ -1979,6 +1998,7 @@ create policy "anon_can_read_survey_audio"
           q3_audio_url: q3Url,
         });
         if (error) throw error;
+        releaseMicStream();
         state.done = true;
         state.view = "responses";
         await loadResponses();
@@ -1992,6 +2012,7 @@ create policy "anon_can_read_survey_audio"
     }
 
     function resetForm() {
+      releaseMicStream();
       AUDIO_FIELDS.forEach((fieldId) => {
         clipsFor(fieldId).forEach((clip) => {
           if (clip.url) URL.revokeObjectURL(clip.url);
@@ -2019,7 +2040,7 @@ create policy "anon_can_read_survey_audio"
     }
 
     window.addEventListener("beforeunload", () => {
-      if (mediaStream) mediaStream.getTracks().forEach((track) => track.stop());
+      releaseMicStream();
     });
 
     render();
