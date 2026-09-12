@@ -62,6 +62,8 @@ window.SURVEY_I18N = {
       q0Title: "Farmer details",
       farmerName: "Farmer name",
       farmerPhone: "Phone number",
+      farmerEmail: "Email",
+      emailHint: "Enter a valid email address",
       q1: "Have you noticed any changes in the weather this year?",
       q2: "How has the weather impacted your farming or your family?",
       q3: "Are you aware that these impacts are expected to intensify next year?",
@@ -121,6 +123,8 @@ window.SURVEY_I18N = {
       q0Title: "किसान की जानकारी",
       farmerName: "किसान का नाम",
       farmerPhone: "फ़ोन नंबर",
+      farmerEmail: "ईमेल",
+      emailHint: "सही ईमेल पता लिखें",
       q1: "क्या आपने इस साल मौसम में कोई बदलाव देखा है?",
       q2: "मौसम का आपकी खेती या परिवार पर क्या असर हुआ है?",
       q3: "क्या आप जानते हैं कि ये प्रभाव अगले साल और तेज़ होने वाले हैं?",
@@ -312,7 +316,8 @@ window.SURVEY_I18N = {
     }
 
     input[type="text"],
-    input[type="tel"] {
+    input[type="tel"],
+    input[type="email"] {
       width: 100%;
       border: 1px solid hsl(var(--border));
       background: hsl(var(--background));
@@ -649,6 +654,7 @@ window.SURVEY_I18N = {
       lang: DEFAULT_LANG,
       farmer_name: "",
       farmer_phone: "",
+      farmer_email: "",
       q1_text: "",
       q2_text: "",
       q3_aware: "",
@@ -1023,6 +1029,7 @@ create policy "anon_can_read_survey_audio"
         input.type = type;
         input.id = id;
         if (type === "tel") input.autocomplete = "tel";
+        if (type === "email") input.autocomplete = "email";
         if (id === "farmer_name") input.autocomplete = "name";
         input.value = state[valueKey] || "";
         input.placeholder = placeholder || t("typeHere");
@@ -1077,6 +1084,8 @@ create policy "anon_can_read_survey_audio"
       if (!state.farmer_name.trim()) return t("required");
       const phone = state.farmer_phone.replace(/\D/g, "");
       if (phone.length < 10) return t("phoneHint");
+      const email = state.farmer_email.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t("emailHint");
       if (!answered("q1_text", "q1")) return t("required");
       if (!answered("q2_text", "q2")) return t("required");
       if (!state.q3_aware) return t("required");
@@ -1198,6 +1207,7 @@ create policy "anon_can_read_survey_audio"
         meta.className = "response-meta";
         meta.append(
           document.createTextNode(row.farmer_phone || t("none")),
+          document.createTextNode(row.farmer_email || t("none")),
           document.createTextNode(when),
           document.createTextNode(String(row.language || "").toUpperCase())
         );
@@ -1286,6 +1296,14 @@ create policy "anon_can_read_survey_audio"
           valueKey: "farmer_phone",
           type: "tel",
           hint: t("phoneHint"),
+          withRecorder: false,
+        }),
+        textField({
+          id: "farmer_email",
+          label: t("farmerEmail"),
+          valueKey: "farmer_email",
+          type: "email",
+          hint: t("emailHint"),
           withRecorder: false,
         })
       );
@@ -1424,6 +1442,7 @@ create policy "anon_can_read_survey_audio"
           language: state.lang,
           farmer_name: state.farmer_name.trim(),
           farmer_phone: state.farmer_phone.trim(),
+          farmer_email: state.farmer_email.trim().toLowerCase(),
           farmer_name_transcript: null,
           farmer_phone_transcript: null,
           farmer_name_audio_path: null,
@@ -1461,6 +1480,7 @@ create policy "anon_can_read_survey_audio"
       });
       state.farmer_name = "";
       state.farmer_phone = "";
+      state.farmer_email = "";
       state.q1_text = "";
       state.q2_text = "";
       state.q3_aware = "";

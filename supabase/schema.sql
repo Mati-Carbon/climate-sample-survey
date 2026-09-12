@@ -5,6 +5,7 @@ create table if not exists public.climate_survey_responses (
   language text not null default 'hi',
   farmer_name text,
   farmer_phone text,
+  farmer_email text,
   farmer_name_transcript text,
   farmer_phone_transcript text,
   farmer_name_audio_path text,
