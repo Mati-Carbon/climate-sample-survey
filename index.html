@@ -45,6 +45,7 @@ window.SURVEY_I18N = {
       recordings: "Recordings",
       noSpeech: "Live transcription is not available in this browser. You can still type and record.",
       micBlocked: "Microphone is blocked. Allow access or open this form in a new tab.",
+      recordFailed: "Recording did not save on this phone. Try again, or type the answer.",
       iframeHint: "If microphone, camera, or location does not work here, open this form in a new tab.",
       openTab: "Open in new tab",
       setup: "Add your Supabase URL and anon key before collecting responses.",
@@ -131,6 +132,7 @@ window.SURVEY_I18N = {
       recordings: "रिकॉर्डिंग",
       noSpeech: "ब्राउज़र में आवाज़-से-लेख उपलब्ध नहीं है। आप लिख भी सकते हैं।",
       micBlocked: "माइक्रोफ़ोन बंद है। अनुमति दें या नए टैब में खोलें।",
+      recordFailed: "इस फ़ोन पर रिकॉर्डिंग नहीं बची। फिर कोशिश करें, या उत्तर लिखें।",
       iframeHint: "माइक, कैमरा या स्थान न चले तो नए टैब में खोलें।",
       openTab: "नए टैब में खोलें",
       setup: "सर्वे शुरू करने से पहले Supabase URL और anon key डालें।",
@@ -535,7 +537,12 @@ window.SURVEY_I18N = {
       border-radius: var(--radius);
     }
 
-    .clip audio { flex: 1; min-width: 0; height: 36px; }
+    .clip audio, .clip video {
+      flex: 1;
+      min-width: 0;
+      height: 36px;
+      max-height: 44px;
+    }
 
     .clip-remove {
       border: 0;
@@ -809,10 +816,12 @@ window.SURVEY_I18N = {
 
     let mediaRecorder = null;
     let mediaStream = null;
+    let recordClone = null;
     let chunks = [];
     let recTimer = null;
     let recStartedAt = 0;
     let wavCapture = null;
+    let audioContext = null;
 
     const currentLang = () =>
       I18N.languages.find((lang) => lang.code === state.lang) ||
@@ -1001,6 +1010,11 @@ create policy "anon_can_read_survey_audio"
       return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
     }
 
+    function prefersAppleAudio() {
+      const ua = navigator.userAgent || "";
+      return isAppleMobile() || (/Macintosh/.test(ua) && !/Chrome|Chromium|Edg|Firefox|Android/i.test(ua));
+    }
+
     function pickMime() {
       if (!window.MediaRecorder) return "";
       const apple = [
@@ -1016,8 +1030,16 @@ create policy "anon_can_read_survey_audio"
         "audio/mp4",
         "audio/ogg;codecs=opus",
       ];
-      const types = isAppleMobile() ? apple : others;
+      const types = prefersAppleAudio() ? apple : others;
       return types.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+    }
+
+    function unlockAudioContext() {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      if (!audioContext || audioContext.state === "closed") audioContext = new Ctx();
+      if (audioContext.state === "suspended") audioContext.resume();
+      return audioContext;
     }
 
     function extensionForMime(type) {
@@ -1034,13 +1056,23 @@ create policy "anon_can_read_survey_audio"
       player.preload = "metadata";
       player.setAttribute("playsinline", "");
       player.setAttribute("webkit-playsinline", "");
+      player.setAttribute("controlslist", "nodownload");
       player.removeAttribute("src");
       player.innerHTML = "";
       const source = document.createElement("source");
       source.src = url;
-      if (mime) source.type = String(mime).split(";")[0];
+      if (mime) source.type = String(mime).split(";")[0].replace("video/mp4", "audio/mp4");
       player.append(source);
+      player.src = url;
       player.load();
+    }
+
+    function createPlayer(url, mime) {
+      const kind = String(mime || url || "").toLowerCase();
+      const useVideo = /mp4|m4a|aac|video/.test(kind);
+      const player = document.createElement(useVideo ? "video" : "audio");
+      attachAudio(player, url, mime);
+      return player;
     }
 
     function mergeFloat32(parts) {
@@ -1082,8 +1114,8 @@ create policy "anon_can_read_survey_audio"
     }
 
     async function startWavCapture(stream) {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      const context = new Ctx();
+      const context = unlockAudioContext();
+      if (!context) throw new Error("AudioContext unavailable");
       if (context.state === "suspended") await context.resume();
       const source = context.createMediaStreamSource(stream);
       const processor = context.createScriptProcessor(4096, 1, 1);
@@ -1104,11 +1136,10 @@ create policy "anon_can_read_survey_audio"
       wavCapture = null;
       if (!capture) return null;
       capture.processor.onaudioprocess = null;
-      capture.source.disconnect();
-      capture.processor.disconnect();
-      capture.mute.disconnect();
+      try { capture.source.disconnect(); } catch {}
+      try { capture.processor.disconnect(); } catch {}
+      try { capture.mute.disconnect(); } catch {}
       const sampleRate = capture.context.sampleRate || 44100;
-      capture.context.close();
       if (!capture.parts.length) return null;
       return encodeWav(mergeFloat32(capture.parts), sampleRate);
     }
@@ -1171,8 +1202,7 @@ create policy "anon_can_read_survey_audio"
       clips.forEach((clip) => {
         const row = document.createElement("div");
         row.className = "clip";
-        const player = document.createElement("audio");
-        attachAudio(player, clip.url, clip.mime);
+        const player = createPlayer(clip.url, clip.mime);
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "clip-remove";
@@ -1212,34 +1242,53 @@ create policy "anon_can_read_survey_audio"
       }
     }
 
+    function finishRecorderClip(fieldId, mimeType) {
+      const rawType =
+        (mediaRecorder && mediaRecorder.mimeType) ||
+        mimeType ||
+        (chunks[0] && chunks[0].type) ||
+        (prefersAppleAudio() ? "audio/mp4" : "audio/webm");
+      const type = String(rawType).includes("mp4") ? "audio/mp4" : rawType;
+      const blob = new Blob(chunks, { type });
+      if (blob.size > 0) addClip(fieldId, blob, type);
+      else {
+        state.error = t("recordFailed");
+        showError(state.error);
+      }
+      mediaRecorder = null;
+      if (recordClone && recordClone !== mediaStream) {
+        recordClone.getTracks().forEach((track) => track.stop());
+      }
+      recordClone = null;
+      updateComposerChrome(fieldId);
+    }
+
     async function startRecording(fieldId) {
       state.error = "";
       showError("");
+      unlockAudioContext();
       try {
         if (state.recordingId) await stopRecording();
         mediaStream = await ensureMicStream();
         chunks = [];
         state.recordingId = fieldId;
         recStartedAt = Date.now();
-        if (isAppleMobile()) {
-          await startWavCapture(mediaStream);
-        } else {
-          const mimeType = pickMime();
+        const mimeType = pickMime();
+        if (window.MediaRecorder) {
+          recordClone = mediaStream.clone ? mediaStream.clone() : mediaStream;
           mediaRecorder = mimeType
-            ? new MediaRecorder(mediaStream, { mimeType })
-            : new MediaRecorder(mediaStream);
-          mediaRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-          mediaRecorder.onstop = () => {
-            const type =
-              mediaRecorder.mimeType ||
-              mimeType ||
-              (chunks[0] && chunks[0].type) ||
-              "audio/webm";
-            addClip(fieldId, new Blob(chunks, { type }), type);
-            mediaRecorder = null;
-            updateComposerChrome(fieldId);
+            ? new MediaRecorder(recordClone, { mimeType })
+            : new MediaRecorder(recordClone);
+          mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+          mediaRecorder.onerror = () => {
+            state.error = t("recordFailed");
+            showError(state.error);
           };
-          mediaRecorder.start(1000);
+          mediaRecorder.onstop = () => finishRecorderClip(fieldId, mimeType);
+          if (prefersAppleAudio()) mediaRecorder.start();
+          else mediaRecorder.start(1000);
+        } else {
+          await startWavCapture(mediaStream);
         }
         updateComposerChrome(fieldId);
         recTimer = setInterval(() => {
@@ -1247,6 +1296,7 @@ create policy "anon_can_read_survey_audio"
           if (el) el.textContent = formatTime(Date.now() - recStartedAt);
         }, 250);
       } catch (err) {
+        console.error(err);
         state.error = t("micBlocked");
         showError(state.error);
       }
@@ -1260,12 +1310,17 @@ create policy "anon_can_read_survey_audio"
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
         await new Promise((resolve) => {
           mediaRecorder.addEventListener("stop", resolve, { once: true });
+          try { if (mediaRecorder.requestData) mediaRecorder.requestData(); } catch {}
           mediaRecorder.stop();
         });
       }
       if (wavCapture && id) {
         const wav = stopWavCapture();
-        addClip(id, wav, "audio/wav");
+        if (wav) addClip(id, wav, "audio/wav");
+        else {
+          state.error = t("recordFailed");
+          showError(state.error);
+        }
       }
       if (id) updateComposerChrome(id);
     }
@@ -1279,6 +1334,7 @@ create policy "anon_can_read_survey_audio"
     }
 
     async function toggleRecording(fieldId) {
+      unlockAudioContext();
       if (state.recordingId === fieldId) await stopRecording();
       else await startRecording(fieldId);
     }
@@ -1629,9 +1685,12 @@ create policy "anon_can_read_survey_audio"
       p.textContent = textOrNone(text);
       box.append(p);
       (urls || []).forEach((url) => {
-        const player = document.createElement("audio");
-        attachAudio(player, url, url.includes(".wav") ? "audio/wav" : url.includes(".m4a") || url.includes(".mp4") ? "audio/mp4" : "");
-        box.append(player);
+        const mime = url.includes(".wav")
+          ? "audio/wav"
+          : url.includes(".m4a") || url.includes(".mp4")
+            ? "audio/mp4"
+            : "";
+        box.append(createPlayer(url, mime));
       });
       root.append(box);
     }
