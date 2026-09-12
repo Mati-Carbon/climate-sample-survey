@@ -71,6 +71,13 @@ window.SURVEY_I18N = {
       q2: "How has the weather impacted your farming or your family?",
       q3: "Are you aware that these impacts are expected to intensify next year?",
       q3Follow: "Add more if you wish",
+      probesLabel: "You can ask it this way:",
+      q2p1: "How has the weather affected your crops, crop yield, or farming activities this year?",
+      q2p2: "Have you faced any changes in irrigation needs, pests, or crop losses because of the weather?",
+      q2p3: "Has the weather affected your family’s income, daily work, health, or other household activities?",
+      q3p1: "Do you think these weather-related challenges could become more frequent or severe next year?",
+      q3p2: "Which impacts do you expect to increase—heat, rainfall changes, water availability, or crop losses?",
+      q3p3: "What concerns you most about the weather next year?",
       typed: "Typed answer",
       spoken: "Spoken transcript",
       audio: "Audio",
@@ -135,6 +142,13 @@ window.SURVEY_I18N = {
       q2: "मौसम का आपकी खेती या परिवार पर क्या असर हुआ है?",
       q3: "क्या आप जानते हैं कि ये प्रभाव अगले साल और तेज़ होने वाले हैं?",
       q3Follow: "अगर चाहें तो और बताएँ",
+      probesLabel: "इस तरह भी पूछ सकते हैं:",
+      q2p1: "इस साल मौसम का आपकी फसल, पैदावार या खेती के काम पर क्या असर हुआ है?",
+      q2p2: "मौसम की वजह से सिंचाई, कीट-पतंग या फसल नुकसान में कोई बदलाव आया है?",
+      q2p3: "मौसम का आपके परिवार की आमदनी, रोज़ के काम, सेहत या घर के अन्य कामों पर असर पड़ा है?",
+      q3p1: "क्या आपको लगता है कि मौसम से जुड़ी ये दिक्कतें अगले साल और ज़्यादा या तेज़ हो सकती हैं?",
+      q3p2: "किन असरों के बढ़ने की उम्मीद है — गर्मी, बारिश में बदलाव, पानी की उपलब्धता, या फसल नुकसान?",
+      q3p3: "अगले साल के मौसम को लेकर आपको सबसे ज़्यादा चिंता किस बात की है?",
       typed: "लिखा हुआ उत्तर",
       spoken: "बोला हुआ पाठ",
       audio: "ऑडियो",
@@ -285,6 +299,32 @@ window.SURVEY_I18N = {
     }
 
     .question h2 { font-size: 1.05rem; }
+
+    .probes {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      background: hsl(var(--muted) / 0.7);
+      border: 1px solid hsl(var(--border));
+    }
+
+    .probes-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: hsl(var(--muted-foreground));
+      margin-bottom: 6px;
+    }
+
+    .probes ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .probes li {
+      margin: 4px 0;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.88rem;
+    }
 
     .card {
       background: hsl(var(--card));
@@ -1102,12 +1142,29 @@ create policy "anon_can_read_survey_audio"
       box.textContent = message || "";
     }
 
-    function questionBlock(id, title, extra) {
+    function probeList(keys) {
+      const wrap = document.createElement("div");
+      wrap.className = "probes";
+      const label = document.createElement("div");
+      label.className = "probes-label";
+      label.textContent = t("probesLabel");
+      const ul = document.createElement("ul");
+      keys.forEach((key) => {
+        const li = document.createElement("li");
+        li.textContent = t(key);
+        ul.append(li);
+      });
+      wrap.append(label, ul);
+      return wrap;
+    }
+
+    function questionBlock(id, title, extra, probes) {
       const section = document.createElement("section");
       section.className = "question";
       const h = document.createElement("h2");
       h.textContent = title;
       section.append(h);
+      if (probes?.length) section.append(probeList(probes));
       if (extra) section.append(extra);
       return section;
     }
@@ -1307,7 +1364,7 @@ create policy "anon_can_read_survey_audio"
       q1.append(textField({ id: "q1", valueKey: "q1_text" }));
       root.append(q1);
 
-      const q2 = questionBlock("q2", t("q2"));
+      const q2 = questionBlock("q2", t("q2"), null, ["q2p1", "q2p2", "q2p3"]);
       q2.append(textField({ id: "q2", valueKey: "q2_text" }));
       root.append(q2);
 
@@ -1329,7 +1386,7 @@ create policy "anon_can_read_survey_audio"
         });
         choices.append(btn);
       });
-      const q3 = questionBlock("q3", t("q3"), choices);
+      const q3 = questionBlock("q3", t("q3"), choices, ["q3p1", "q3p2", "q3p3"]);
       q3.append(textField({ id: "q3", label: t("q3Follow"), valueKey: "q3_text" }));
       root.append(q3);
 
